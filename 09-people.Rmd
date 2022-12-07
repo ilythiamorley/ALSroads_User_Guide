@@ -1,0 +1,41 @@
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+r3dDefaults = rgl::r3dDefaults
+m = structure(c(0.921, -0.146, 0.362, 0, 0.386, 0.482, -0.787, 0, 
+-0.06, 0.864, 0.5, 0, 0, 0, 0, 1), .Dim = c(4L, 4L))
+r3dDefaults$FOV = 50
+r3dDefaults$userMatrix = m
+r3dDefaults$zoom = 0.75
+options(lidR.progress = FALSE)
+
+knitr::opts_chunk$set(
+  comment =  "#>", 
+  collapse = TRUE,
+  fig.align = "center")
+
+rgl::setupKnitr(autoprint = TRUE)
+```
+# Project Team Members {#sec-team}
+
+`ALSroads` was developed by Jean-Romain Roussel for road extraction in forested regions and has been tested and validated in Quebec and Ontario. A comprehensive explanation of the road extraction method is available in [Roussel et al. (2022)](https://www.sciencedirect.com/science/article/pii/S1569843222002084#d1e1483), as well as results from the method implementation in Quebec. The method has been validated for two forest management units in Ontario. The development and testing of the road extraction method and the `ALSroads` package would not be possible without dedicated collaborators.
+
+-   [**Jean-Romain Roussel**](https://github.com/Jean-Romain) [Method Author and Developer]
+
+-   [**Ilythia D. Morley**](https://blogs.ubc.ca/imorley/) [Project Coordinator] is the project coordinator for this project to facilitate communication, data transfers, and product testing.
+
+-   [**Professor Nicholas Coops**](https://forestry.ubc.ca/faculty-profile/nicholas-coops/) [Project Lead] holds a Canada Research Chair in Remote Sensing (Tier 1) at UBC. He has published \>460 total referenced peer-reviewed journal publications and is internationally recognized as a scientific leader in the field of remote sensing. He was the principal investigator of the AWARE project; a 5-year research project focused on developing LIDAR applications in Canada for forestry applications. He is a co-author on the Canadian Forest Service LIDAR best practice guide series, the most downloaded CFS information handbook ever, focused on LIDAR data processing. In 2020, he was the co-receipt of the Marcus Wallenberg prize for scientific achievements contributing to significantly broadening knowledge and technical development within the field of Forestry.
+
+-   [**Professor Alexis Achim**](https://www.sbf.ulaval.ca/alexis-achim) [Project Lead] is the Director of Laval University's Renewable Materials Research Centre. He has developed expertise in the field of wood resource assessment and participated in AWARE, a Canada-wide project on using ALS to predict wood fibre resource attributes. The R package 'lidR', which is extensively used in the ALS international research community, was developed in his lab as part of the work done for this project. He is currently a lead investigator of a new 5-year, \$CAD 5 million research project (Silva21) developing new silvicultural approaches and technologies for the Canadian Forest industries.
+
+-   **Antoine Leboeuf** [Team Member] Ministère des Forêts, de la Faune et des Parcs (MFFP)
+
+-   **Jean-Francois Bourdon** [Team Member] Ministère des Forêts, de la Faune et des Parcs (MFFP)
+
+-   [**Professor Jeff Dech**](https://www.nipissingu.ca/users/jeff-dech) [Team Member] is chair of the Department of Biology and Chemistry at Nipissing University. He previously held an Industrial Research Chair in Forest Bioproducts supported by Tembec and was a co-investigator on the AWARE project. He has developed a research program focused on the use of site classification and stand structure data derived from remote sensing to describe and predict forest growth and quality over broad spatial scales. This work has focused on Ecological Land Classification and LiDAR-derived predictors and has involved the establishment of extensive networks of field plots and intensive sampling campaigns as part of several collaborative projects in the Boreal and Great-Lakes St. Lawrence forests.
+
+-   [**Douglas E.B. Reid**](http://www.infogo.gov.on.ca/infogo/home.html#empProfile/27211/en) [Team Member] is the Boreal Silviculture Research Program Lead at the Centre for Northern Forest Ecosystem Research in Thunder Bay. His research has developed tools to evaluate the accuracy of remote sensing approaches to silviculture monitoring and is developing tools to evaluate stand height as a measure of growth performance in regenerating stands using single photon LiDAR. He has knowledge of the importance of roads and their extreme variability from conducting previous work examining caribou habitat conditions within managed and unmanaged forests in Ontario.
+
+-   [**Mr. Grant McCartney**](https://www.linkedin.com/in/grantmccartneygis) [Team Member] is an analyst at [Forsite](https://www.forsite.ca/), and formally acted as a spatial analyst and forest information systems coordinator with Rayonier Advanced Materials (RYAM) Forest Management. He performs spatial analysis in support of forest management planning (FMP) and forestry operations on the Gordon Cosens, Romeo Malette and Martel -- Magpie Forests in Northeastern Ontario, Canada. Grant is a member of the Forest Information Data Advisory Group (FIDAG) and Provincial Forest Inventory Advisory Committee (PFIAC) MNRF committees working to improve the quality of spatial forest information in the province.
+
+-   **Scott McPherson** [Team Member] is the planning forester and analyst for the Nipissing and Sudbury Forests of central Ontario, reporting to [Nipissing Forest Resource Management Inc](https://www.nipissingforest.com/) and the Vermilion Forest Management Company, Ltd. Scott has worked in the government and industry sectors for 25 years, focusing on growth & Yield, silviculture, and planning.
+
+-   **Lauren Quist** [Team Member] is an analyst and planner at [Hearst Forest Management Inc](http://www.hearstforest.com/english/indexen.html) and formally worked as a contractor for the MNFR. Lauren assists in preparing 10-year forest management plans is a certified Photo-Interpreter for the Boreal Forest and Great Lakes - St.L. Forest and works with FRI and LiDAR data to produce timber volume estimates. In her current role, Lauren's responsibilities include producing FSC documentation & products (e.g. update Gap Analysis, HCV, caribou strategy), caribou habitat & disturbance analysis, and the preparation of annual forest management reports.

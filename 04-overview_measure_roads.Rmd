@@ -1,0 +1,150 @@
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+library(lidR)
+library(ggplot2)
+library(raster)
+library(sf)
+
+r3dDefaults = rgl::r3dDefaults
+m = structure(c(0.921, -0.146, 0.362, 0, 0.386, 0.482, -0.787, 0, 
+-0.06, 0.864, 0.5, 0, 0, 0, 0, 1), .Dim = c(4L, 4L))
+r3dDefaults$FOV = 50
+r3dDefaults$userMatrix = m
+r3dDefaults$zoom = 0.75
+
+knitr::opts_chunk$set(
+  comment =  "#>", 
+  collapse = TRUE,
+  fig.align = "center")
+
+rgl::setupKnitr(autoprint = TRUE)
+
+#Data
+roads <- st_read("data/04/roads.shp")
+roads_upd <-st_read("data/04/updated_roads.shp")
+road_upd <- st_read("data/04/road_upd.shp")
+road_poly <- st_read("data/04/road_poly.shp")
+roads_upd <-  transform(roads_upd, CLASS = as.factor(CLASS))
+roads_upd_filt <- subset(roads_upd, CLASS == 1| CLASS == 2)
+```
+
+# Road Extraction with `ALSroads` {#sec-road-extraction-using-alsroads}
+
+The `ALSroads` package includes functions developed for correcting and updating vectorial and topologically valid forest road networks. Using an existing map of road centrelines, the method relocates roads, measures their width, and assigns a class to each road segment [Roussel et al. (2022)](https://www.sciencedirect.com/science/article/pii/S1569843222002084#d1e1483).
+
+Broadly, the road extraction method consists of three steps:
+
+1.  Production of a raster of conductivity from the point cloud to estimate how easy/difficult it is for an agent to move between two adjacent pixels, using the concept of friction. Low cost (or high conductivity) is attributed to pixels where movement is easy; these pixels are interpreted as those which likely correspond to roads.
+
+2.  Application of a least cost path algorithm on the conductivity map to retrieve an accurate geometry of the road centerline in a vector format. This step uses a reference road network maintained by an authority as prior information and updates the geometry of the network.
+
+3.  Estimation of road widths and road state using characteristics from the point cloud. Using the accurate geometry returned by step 2, the algorithm extracts the average conductivity of the path and takes successive slices of the point cloud perpendicularly to the road. The slices are used to measure the widths of the roads by detecting variations in the DTM. They are also used to estimate the percentage of points above the measured road, assuming they correspond to vegetation on the road. The state of the road is determined as a combination of the conductivity, drivable width, and percentage of points above the road. Good state roads are assumed to be large, with a low displacement cost and minimal edge vegetation.
+
+## Standard Road Extraction using `measure_roads()` {#sec-standard-road-extraction-using-measure_roads}
+
+Here, we explain a standard application of the `measure_roads()` function.
+
+Using a reference road (spatial line), `measure_roads()` extracts LiDAR information within a buffer of the reference road and computes the exact position of the road. Then, using the updated road shape, road metrics are computed; these include the total width, drivable width, sinuosity, and class.
+
+### Required R Packages: {#sec-required-r-packages}
+
+``` r
+remotes::install_github("Jean-Romain/ALSroads") #Install the ALSroads Package
+
+library("ALSroads") 
+library("lidR")
+library("raster")
+library("sf")
+library("ggplot2")
+```
+
+### Input Data {#sec-input-data}
+
+As detailed in section \@ref(sec-road-extraction-data-requirements), the required input data for updating an existing road network are:
+
+1.  `LAScatalog` of LiDAR data
+2.  Digital Terrain Model (DTM) that corresponds to the LAS catalog coverage
+3.  Pre-existing road network
+
+``` r
+ctg <- readLAScatalog("path/to/ctg/files", filter = "-drop_withheld -keep_random_fraction 0.25")
+dtm <- raster("path/to/dtm.tif")
+roads <- st_read("path/to/roads.shp")
+```
+
+Before running the `measure_roads()` function, users are recommended to:
+
+1.  Ensure the coordinate reference system (CRS) of the existing roads network and `LAScatalog` match.
+2.  Crop the roads network to the extent of the `LAScatalog` to confirm that no roads are beyond the extent of the point cloud and DTM.
+
+### Network Update {#sec-network-update}
+
+The `measure_roads()` function updates the existing road network by adding eight attributes to the road network:
+
+-   ROADWIDTH - The total width (meters) of the road.
+-   DRIVABLEWIDTH - The drivable width (meters) of the road.
+-   PERCABOVEROAD - The percentage of points above the road in a range [0.5, 5] m
+-   SHOULDERS - The average number of shoulders found along the roads.
+-   SINUOSITY - The sinuosity (i.e., curvature) of the road.
+-   CONDUCTIVITY - The average conductivity of the road, i.e., how much the road facilitates or impedes movement (unitless)
+-   SCORE - The score of the road relates to the quality of the road. Road score ranges from 0 - 100, with a road score of 100 indicating high-quality roads.
+-   CLASS - A 'Class' (1 - 4) is assigned to each road segment. The class is computed from the SCORE. Class 4 corresponds to a score [0, 25], Class 3 to a score [25, 50], and so on.
+
+## Applying `measure_roads()` {#sec-applying-measure_roads}
+
+``` r
+updated_roads <- measure_roads(ctg = ctg, roads = roads, dtm = dtm)
+```
+
+## Spatial Plotting Updated Roads {#sec-spatial-plotting-updated-roads}
+
+The updated road network is a spatial feature that can be plotted to visualize the location of updated roads.
+
+```{r plot-roads-network, message=FALSE, warning = FALSE, fig.align='center', fig.width=8, fig.height=6, echo = FALSE}
+url = "https://servicesmatriciels.mern.gouv.qc.ca:443/erdas-iws/ogc/wmts/Inventaire_Ecoforestier/Inventaire_Ecoforestier/default/GoogleMapsCompatibleExt2:epsg:3/{z}/{y}/{x}.jpg"
+m <- mapview::mapview(list(roads, roads_upd),
+  layer.name = c("Inaccurate", "Corrected"),
+  color = c("red", "blue"), map.type = "Esri.WorldImagery")
+leaflet::addTiles(m@map, url)
+```
+
+Following road extraction, the new road width attribute can be used to buffer the road and show the road footprint. Buffering is performed using the `sf` package function `st_buffer()`.
+
+``` r
+road_poly <- sf::st_buffer(updated_roads, updated_roads$ROADWIDTH/2)
+```
+
+```{r plot-buff-rd, message=FALSE, warning = FALSE, fig.align='center', fig.width=8, fig.height=6, echo = FALSE}
+url <- "https://servicesmatriciels.mern.gouv.qc.ca:443/erdas-iws/ogc/wmts/Inventaire_Ecoforestier/Inventaire_Ecoforestier/default/GoogleMapsCompatibleExt2:epsg:3/{z}/{y}/{x}.jpg"
+m <- mapview::mapview(list(road_upd, road_poly),
+                      layer.name = c("Corrected Road", "Road Width Buffer"),
+                      col.regions=list("blue","orange"),col=list("blue","orange"),
+                      map.type = "Esri.WorldImagery")
+leaflet::addTiles(m@map, url)
+```
+
+## Attribute Plotting Updated Roads {#sec-attribute-plotting-updated-roads}
+
+Information about the quality of roads is beneficial for understanding the characteristics of road networks. Simple plots using the package `ggplot2` allow users to complete a preliminary assessment of the updated road network.
+
+The number of roads per new road class can be plotted for visualization.
+
+``` r
+ggplot(roads_upd, aes(y = CLASS, fill = CLASS)) +
+    geom_bar() +
+    labs(x="Count", y="Road Class") +
+    scale_fill_discrete(name = "Road Class") 
+```
+
+![](images/road_class_plot.PNG)
+
+The drivable widths of roads, grouped by road class, can be plotted for comparison. Only Class 1 and 2 roads are included, as Class 3 and 4 roads do not have updated road widths.
+
+``` r
+ggplot(data=roads_upd_filt, aes(x=CLASS, y= DRIVABL, fill=CLASS)) +
+    geom_boxplot(size = 0.25, color="black", coef = 1, outlier.size = 0.5)+
+    labs(y = "Drivable Road Width (m)", x = "Road class")+
+      theme(text = element_text(size = 16)) +
+      scale_fill_manual(values = c("#F8766D", "#7CAE00"), (name = "Road Class"))
+```
+
+![](images/road_width_plot.PNG)
